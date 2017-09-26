@@ -1,5 +1,5 @@
-var assign = require('lodash.assign');
-var flatten = require('lodash.flatten');
+const assign = require('lodash.assign');
+const flatten = require('lodash.flatten');
 
 /**
  * Creates configuration variants.
@@ -11,9 +11,9 @@ var flatten = require('lodash.flatten');
  * @returns {*|Array}
  */
 module.exports = function createVariants(baseConfig, variants, configCallback) {
-    if(arguments.length < 3) {
-        if(arguments.length === 2) {
-            if(typeof variants === 'function') {
+    if (arguments.length < 3) {
+        if (arguments.length === 2) {
+            if (typeof variants === 'function') {
                 // createVariants(variants: Object, configCallback: Function)
                 configCallback = variants;
                 variants = baseConfig;
@@ -31,19 +31,21 @@ module.exports = function createVariants(baseConfig, variants, configCallback) {
     // Okay, so this looks a little bit messy but it really does make some sense.
     // Essentially, for each base configuration, we want to create every
     // possible combination of the configuration variants specified above.
-    var transforms = Object.keys(variants).map(function(key) {
+    const transforms = Object.keys(variants).map(function(key) {
             return function(config) {
                 return variants[key].map(function(value) {
-                    var result = assign({}, config);
+                    let result = assign({}, config);
                     result[key] = value;
                     return result;
                 });
             };
         }),
-        configs = transforms.reduce(function(options, transform) {
-            return flatten(options.map(transform));
-        }, [baseConfig]);
+        configs = transforms.reduce(
+            function(options, transform) {
+                return flatten(options.map(transform));
+            },
+            [baseConfig],
+        );
 
-
-    return configCallback && configs.map(configCallback) || configs;
+    return (configCallback && configs.map(configCallback)) || configs;
 };

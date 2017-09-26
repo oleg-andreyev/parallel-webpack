@@ -8,17 +8,17 @@ describe('watchModeIPC', () => {
         webpackWorker = require('../watchModeIPC.js');
         nodeIpc = require('node-ipc');
         nodeIpc.server = {
-            start: jest.fn()
+            start: jest.fn(),
         };
         nodeIpc.of = {
             webpack: {
-                emit: jest.fn()
-            }
+                emit: jest.fn(),
+            },
         };
 
         nodeIpc.connectTo = function(serverName, onConnect) {
             onConnect();
-        }
+        };
     });
 
     describe('startWatchIPCServer', () => {
@@ -32,13 +32,13 @@ describe('watchModeIPC', () => {
         });
     });
 
-     describe('notifyIPCWatchCompileDone', () => {
+    describe('notifyIPCWatchCompileDone', () => {
         it('should call connectTo', () => {
             webpackWorker.notifyIPCWatchCompileDone(0);
             expect(nodeIpc.config.id).toEqual('webpack0');
             expect(nodeIpc.config.stopRetrying).toEqual(3);
             expect(nodeIpc.config.silent).toEqual(true);
             expect(nodeIpc.of.webpack.emit).toHaveBeenCalledWith('done', 0);
-        })
+        });
     });
 });

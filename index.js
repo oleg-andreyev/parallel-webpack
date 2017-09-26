@@ -12,7 +12,7 @@ var ajv = new Ajv({
     allErrors: true,
     coerceTypes: true,
     removeAdditional: 'all',
-    useDefaults: true
+    useDefaults: true,
 });
 var validate = ajv.compile(schema);
 
@@ -30,23 +30,31 @@ function startFarm(config, configPath, options, runWorker, callback) {
         startWatchIPCServer(callback, Object.keys(config));
     }
 
-    if(notSilent(options)) {
-        console.log(chalk.blue('[WEBPACK]') + ' Building ' + chalk.yellow(config.length) + ' ' + pluralize('target', config.length));
+    if (notSilent(options)) {
+        console.log(
+            chalk.blue('[WEBPACK]') +
+                ' Building ' +
+                chalk.yellow(config.length) +
+                ' ' +
+                pluralize('target', config.length),
+        );
     }
 
-    var builds = config.map(function (c, i) {
+    var builds = config.map(function(c, i) {
         return runWorker(configPath, options, i, config.length);
     });
-    if(options.bail) {
+    if (options.bail) {
         return Promise.all(builds);
     } else {
         return Promise.settle(builds).then(function(results) {
-            return Promise.all(results.map(function (result) {
-                if(result.isFulfilled()) {
-                    return result.value();
-                }
-                return Promise.reject(result.reason());
-            }));
+            return Promise.all(
+                results.map(function(result) {
+                    if (result.isFulfilled()) {
+                        return result.value();
+                    }
+                    return Promise.reject(result.reason());
+                }),
+            );
         });
     }
 }
@@ -77,10 +85,10 @@ function run(configPath, options, callback) {
         argvBackup = process.argv,
         farmOptions = assign({}, options);
     options = options || {};
-    if(options.colors === undefined) {
+    if (options.colors === undefined) {
         options.colors = chalk.supportsColor;
     }
-    if(!options.argv) {
+    if (!options.argv) {
         options.argv = [];
     }
     options.argv.unshift(process.execPath, 'parallel-webpack');
@@ -88,24 +96,41 @@ function run(configPath, options, callback) {
         process.argv = options.argv;
         config = loadConfigurationFile(configPath);
         process.argv = argvBackup;
-    } catch(e) {
+    } catch (e) {
         process.argv = argvBackup;
-        return Promise.reject(new Error(
-            chalk.red('[WEBPACK]') + ' Could not load configuration file ' + chalk.underline(configPath) + "\n"
-            + e
-        ));
+        return Promise.reject(
+            new Error(
+                chalk.red('[WEBPACK]') +
+                    ' Could not load configuration file ' +
+                    chalk.underline(configPath) +
+                    '\n' +
+                    e,
+            ),
+        );
     }
 
     if (!validate(farmOptions)) {
-        return Promise.reject(new Error(
-          'Options validation failed:\n' +
-          validate.errors.map(function(error) {
-            return 'Property: "options' + error.dataPath + '" ' + error.message;
-          }).join('\n')
-        ));
+        return Promise.reject(
+            new Error(
+                'Options validation failed:\n' +
+                    validate.errors
+                        .map(function(error) {
+                            return (
+                                'Property: "options' +
+                                error.dataPath +
+                                '" ' +
+                                error.message
+                            );
+                        })
+                        .join('\n'),
+            ),
+        );
     }
 
-    var workers = workerFarm(farmOptions, require.resolve('./src/webpackWorker'));
+    var workers = workerFarm(
+        farmOptions,
+        require.resolve('./src/webpackWorker'),
+    );
 
     var shutdownCallback = function() {
         if (notSilent(options)) {
@@ -122,26 +147,37 @@ function run(configPath, options, callback) {
         configPath,
         options,
         Promise.promisify(workers),
-        callback
-    ).error(function(err) {
-        if(notSilent(options)) {
-            console.log('%s Build failed after %s seconds', chalk.red('[WEBPACK]'), chalk.blue((Date.now() - startTime) / 1000));
-        }
-        return Promise.reject(err);
-    }).then(function (results) {
-        if(notSilent(options)) {
-            console.log('%s Finished build after %s seconds', chalk.blue('[WEBPACK]'), chalk.blue((Date.now() - startTime) / 1000));
-        }
-        results = results.filter(function(result) {
-            return result;
+        callback,
+    )
+        .error(function(err) {
+            if (notSilent(options)) {
+                console.log(
+                    '%s Build failed after %s seconds',
+                    chalk.red('[WEBPACK]'),
+                    chalk.blue((Date.now() - startTime) / 1000),
+                );
+            }
+            return Promise.reject(err);
+        })
+        .then(function(results) {
+            if (notSilent(options)) {
+                console.log(
+                    '%s Finished build after %s seconds',
+                    chalk.blue('[WEBPACK]'),
+                    chalk.blue((Date.now() - startTime) / 1000),
+                );
+            }
+            results = results.filter(function(result) {
+                return result;
+            });
+            if (results.length) {
+                return results;
+            }
+        })
+        .finally(function() {
+            workerFarm.end(workers);
+            process.removeListener('SIGINT', shutdownCallback);
         });
-        if(results.length) {
-            return results;
-        }
-    }).finally(function () {
-        workerFarm.end(workers);
-        process.removeListener('SIGINT', shutdownCallback);
-    });
 
     if (!options.watch) {
         farmPromise.asCallback(callback);
@@ -151,5 +187,5 @@ function run(configPath, options, callback) {
 
 module.exports = {
     createVariants: require('./src/createVariants'),
-    run: run
+    run: run,
 };

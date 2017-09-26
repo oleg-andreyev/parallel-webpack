@@ -1,13 +1,8 @@
 jest.mock('testConfig.js', () => ({}), { virtual: true });
 
 import { run } from '../index';
-import workerFarm  from 'worker-farm';
-import Bluebird, {
-    promisify,
-    error,
-    then,
-    asCallback,
-} from 'bluebird';
+import workerFarm from 'worker-farm';
+import Bluebird, { promisify, error, then, asCallback } from 'bluebird';
 
 describe('index.js', () => {
     describe('run', () => {
@@ -16,15 +11,25 @@ describe('index.js', () => {
         });
         afterEach(() => {
             process.removeAllListeners('SIGINT');
-        })
+        });
 
         it('should reject promise config cannot get loaded', () => {
-            const returnPromise = run('./does/not/exist.js', { colors: false }, jest.fn());
-            expect(returnPromise.reject.mock.calls[0][0].toString()).toMatchSnapshot();
+            const returnPromise = run(
+                './does/not/exist.js',
+                { colors: false },
+                jest.fn(),
+            );
+            expect(
+                returnPromise.reject.mock.calls[0][0].toString(),
+            ).toMatchSnapshot();
         });
 
         it('should reject promise if options validation fails', () => {
-            const returnPromise = run('testConfig.js', { maxConcurrentWorkers: 'fail' }, jest.fn());
+            const returnPromise = run(
+                'testConfig.js',
+                { maxConcurrentWorkers: 'fail' },
+                jest.fn(),
+            );
             expect(returnPromise.reject.mock.calls[0]).toMatchSnapshot();
         });
 
@@ -32,7 +37,11 @@ describe('index.js', () => {
             jest.spyOn(console, 'log').mockImplementation(() => {});
             promisify.mockReturnValueOnce(jest.fn());
 
-            const returnPromise = run('testConfig.js', { colors: false }, jest.fn());
+            const returnPromise = run(
+                'testConfig.js',
+                { colors: false },
+                jest.fn(),
+            );
             expect(workerFarm.mock.calls[0][0]).toEqual({ maxRetries: 0 });
 
             expect(returnPromise).toBe(Bluebird);
@@ -46,7 +55,8 @@ describe('index.js', () => {
         describe('error callback', () => {
             beforeEach(() => {
                 jest.spyOn(console, 'log').mockImplementation(() => {});
-                jest.spyOn(Date, 'now')
+                jest
+                    .spyOn(Date, 'now')
                     .mockImplementationOnce(() => 0)
                     .mockImplementationOnce(() => 300);
             });
@@ -54,15 +64,21 @@ describe('index.js', () => {
             const errorCbTest = options => {
                 promisify.mockReturnValueOnce(jest.fn());
 
-                const returnPromise = run('testConfig.js', {
-                    json: options.silent,
-                    colors: false
-                }, jest.fn());
+                const returnPromise = run(
+                    'testConfig.js',
+                    {
+                        json: options.silent,
+                        colors: false,
+                    },
+                    jest.fn(),
+                );
                 const cb = returnPromise.error.mock.calls[0][0];
                 const response = cb('Exception on worker farm');
 
                 expect(response).toBe(Bluebird);
-                expect(Bluebird.reject).toHaveBeenCalledWith('Exception on worker farm');
+                expect(Bluebird.reject).toHaveBeenCalledWith(
+                    'Exception on worker farm',
+                );
                 if (options.silent) {
                     expect(console.log).not.toHaveBeenCalled();
                 } else {
@@ -81,7 +97,8 @@ describe('index.js', () => {
         describe('then callback', () => {
             beforeEach(() => {
                 jest.spyOn(console, 'log').mockImplementation(() => {});
-                jest.spyOn(Date, 'now')
+                jest
+                    .spyOn(Date, 'now')
                     .mockImplementationOnce(() => 30000)
                     .mockImplementationOnce(() => 0);
             });
@@ -89,15 +106,19 @@ describe('index.js', () => {
             const thenCbTest = options => {
                 promisify.mockReturnValueOnce(jest.fn());
 
-                const returnPromise = run('testConfig.js', {
-                    json: options.silent,
-                    colors: false
-                }, jest.fn());
+                const returnPromise = run(
+                    'testConfig.js',
+                    {
+                        json: options.silent,
+                        colors: false,
+                    },
+                    jest.fn(),
+                );
                 const cb = returnPromise.then.mock.calls[1][0];
                 const response = cb([true, true, false, undefined, '', 0]);
 
-                expect(response).toEqual([ true, true ]);
-                if(options.silent) {
+                expect(response).toEqual([true, true]);
+                if (options.silent) {
                     expect(console.log).not.toHaveBeenCalled();
                 } else {
                     expect(console.log.mock.calls).toMatchSnapshot();
@@ -116,7 +137,11 @@ describe('index.js', () => {
             it('should call end workerFarm and remove SIGINT listener', () => {
                 promisify.mockReturnValueOnce(jest.fn());
 
-                const returnPromise = run('testConfig.js', { colors: false }, jest.fn());
+                const returnPromise = run(
+                    'testConfig.js',
+                    { colors: false },
+                    jest.fn(),
+                );
                 const cb = returnPromise.finally.mock.calls[0][0];
 
                 expect(process.listenerCount('SIGINT')).toBe(1);
@@ -132,17 +157,21 @@ describe('index.js', () => {
             const shutdownTest = options => {
                 promisify.mockReturnValueOnce(jest.fn());
 
-                const returnPromise = run('testConfig.js', {
-                    json: options.silent,
-                    colors: false
-                }, jest.fn());
+                const returnPromise = run(
+                    'testConfig.js',
+                    {
+                        json: options.silent,
+                        colors: false,
+                    },
+                    jest.fn(),
+                );
 
                 expect(process.listenerCount('SIGINT')).toBe(1);
 
                 process.emit('SIGINT');
                 // called with workers
                 expect(workerFarm.end.mock.calls[0][0]).toBe(workerFarm.end);
-                if(options.silent) {
+                if (options.silent) {
                     expect(console.log).not.toHaveBeenCalled();
                 } else {
                     expect(console.log.mock.calls).toMatchSnapshot();
@@ -155,9 +184,7 @@ describe('index.js', () => {
 
             it('should call end  and remove callback silently', () => {
                 shutdownTest({ silent: true });
-
             });
         });
     });
-
 });

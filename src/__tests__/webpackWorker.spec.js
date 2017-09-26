@@ -2,7 +2,7 @@ const run = jest.fn();
 const close = jest.fn();
 const watch = jest.fn().mockReturnValue({ close });
 
-jest.setMock('webpack',  () => ({ run, watch })); // try to get rid of this.
+jest.setMock('webpack', () => ({ run, watch })); // try to get rid of this.
 jest.mock('../watchModeIPC');
 
 let webpackWorker;
@@ -15,15 +15,17 @@ describe('webpackWorker', () => {
         promiseMock = require('bluebird');
         webpackMock = require('webpack');
         webpackWorker = require('../webpackWorker.js');
-        notifyIPCWatchCompileDone = require('../watchModeIPC').notifyIPCWatchCompileDone;
-        jest.doMock('testConfig', () => ({ webpack: 'config' }), { virtual: true });
+        notifyIPCWatchCompileDone = require('../watchModeIPC')
+            .notifyIPCWatchCompileDone;
+        jest.doMock('testConfig', () => ({ webpack: 'config' }), {
+            virtual: true,
+        });
         jest.resetModules();
         jest.clearAllMocks();
     });
 
     describe('arguments', () => {
         describe('options', () => {
-
             let _argv;
             beforeEach(() => {
                 _argv = process.argv;
@@ -32,17 +34,16 @@ describe('webpackWorker', () => {
                 process.argv = _argv;
             });
 
-            const optionsTest = (options) => {
+            const optionsTest = options => {
                 const finishStats = {
-                        compilation: {},
-                        startTime: 1500034498,
-                        endTime: 1500054500,
+                    compilation: {},
+                    startTime: 1500034498,
+                    endTime: 1500054500,
                 };
                 const doneCallback = jest.fn();
                 jest.spyOn(console, 'log').mockImplementation(() => {});
 
-
-                webpackWorker('testConfig', options , 0, 1, doneCallback);
+                webpackWorker('testConfig', options, 0, 1, doneCallback);
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
                 const finishedCallback = run.mock.calls[0][0];
@@ -57,7 +58,7 @@ describe('webpackWorker', () => {
                         '%s Finished building %s within %s seconds',
                         '[WEBPACK]',
                         'testApp',
-                        '20.002'
+                        '20.002',
                     );
                 }
 
@@ -65,7 +66,6 @@ describe('webpackWorker', () => {
                     expect(process.argv).toEqual(options.argv);
                 }
             };
-
 
             it('should report json only when json: true', () => {
                 optionsTest({ json: true });
@@ -76,7 +76,7 @@ describe('webpackWorker', () => {
             });
 
             it('should set process arguments to the passed ones', () => {
-                optionsTest({ json:true, argv: ['--watch', '--bail']});
+                optionsTest({ json: true, argv: ['--watch', '--bail'] });
             });
 
             it('should call done with stats when there is stats object', () => {
@@ -86,14 +86,14 @@ describe('webpackWorker', () => {
                         errors: [
                             { message: 'module not found' },
                             { message: 'module not found 2' },
-                        ]
+                        ],
                     },
-                    toJson: jest.fn().mockReturnThis()
+                    toJson: jest.fn().mockReturnThis(),
                 };
                 webpackWorker('testConfig', {}, 0, 1, doneCallback);
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
-                let finishedCallback = run.mock.calls[0][0];
+                const finishedCallback = run.mock.calls[0][0];
 
                 expect(process.listenerCount('SIGINT')).toBe(1);
                 finishedCallback(null, statsObj);
@@ -101,19 +101,16 @@ describe('webpackWorker', () => {
                 expect(process.listenerCount('SIGINT')).toBe(0);
                 expect(doneCallback).toHaveBeenCalled();
                 expect(doneCallback.mock.calls[0][0]).toMatchSnapshot();
-
             });
 
             it('should log in watch mode instead of calling done callback', () => {
                 jest.useFakeTimers();
                 const _temp = global.Date;
-                global.Date = jest.fn(() => (
-                    {
-                        toTimeString: jest.fn().mockReturnValue({
-                            split: jest.fn().mockReturnValue(["12:05:54"])
-                        })
-                    }
-                ));
+                global.Date = jest.fn(() => ({
+                    toTimeString: jest.fn().mockReturnValue({
+                        split: jest.fn().mockReturnValue(['12:05:54']),
+                    }),
+                }));
                 jest.spyOn(console, 'log');
                 const doneCallback = jest.fn();
                 const statsObj = {
@@ -121,14 +118,20 @@ describe('webpackWorker', () => {
                         errors: [
                             { message: 'module not found' },
                             { message: 'module not found 2' },
-                        ]
+                        ],
                     },
-                    toJson: jest.fn().mockReturnThis()
+                    toJson: jest.fn().mockReturnThis(),
                 };
-                webpackWorker('testConfig', { watch: true }, 0, 1, doneCallback);
+                webpackWorker(
+                    'testConfig',
+                    { watch: true },
+                    0,
+                    1,
+                    doneCallback,
+                );
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
-                let finishedCallback = watch.mock.calls[0][1];
+                const finishedCallback = watch.mock.calls[0][1];
 
                 expect(process.listenerCount('SIGINT')).toBe(1);
                 finishedCallback(null, statsObj);
@@ -141,43 +144,61 @@ describe('webpackWorker', () => {
                 jest.useRealTimers();
                 global.Date = _temp;
             });
-
         });
 
         describe('multi config options', () => {
             const multiConfigTest = options => {
-                const errorMessage = '[WEBPACK] There is a difference between the amount of the provided configs. Maybe you where expecting command line arguments to be passed to your webpack.config.js. If so, you\'ll need to separate them with a -- from the parallel-webpack options.'
-                jest.doMock('multiTestConfig', () => ( [{ fail: true}, { webpack: 'config'}]), { virtual: true });
+                const errorMessage =
+                    "[WEBPACK] There is a difference between the amount of the provided configs. Maybe you where expecting command line arguments to be passed to your webpack.config.js. If so, you'll need to separate them with a -- from the parallel-webpack options.";
+                jest.doMock(
+                    'multiTestConfig',
+                    () => [{ fail: true }, { webpack: 'config' }],
+                    { virtual: true },
+                );
                 jest.spyOn(console, 'error').mockImplementation(() => {});
 
                 webpackWorker(
-                    options.multi ?  'multiTestConfig' : 'testConfig',
+                    options.multi ? 'multiTestConfig' : 'testConfig',
                     { json: true },
                     options.configIndex,
                     options.expectedConfigs,
-                    jest.fn()
+                    jest.fn(),
                 );
                 if (options.multi && options.expectedConfigs < 3) {
                     const config = promiseMock.resolve.mock.calls[0][0];
-                    expect(config).toEqual({ webpack: 'config'});
+                    expect(config).toEqual({ webpack: 'config' });
                 } else {
-                    expect(promiseMock.reject).toHaveBeenLastCalledWith(errorMessage);
+                    expect(promiseMock.reject).toHaveBeenLastCalledWith(
+                        errorMessage,
+                    );
                     expect(console.error).toHaveBeenCalled();
                 }
-            }
+            };
 
             it('should select the correct indexed one if configs are array', () => {
-                multiConfigTest({ multi: true, configIndex: 1, expectedConfigs: 2 });
+                multiConfigTest({
+                    multi: true,
+                    configIndex: 1,
+                    expectedConfigs: 2,
+                });
             });
 
             it('should fail if expectedConfigLength > 1 in case of single config', () => {
-                multiConfigTest({ multi: false, configIndex: 1, expectedConfigs: 2 });
+                multiConfigTest({
+                    multi: false,
+                    configIndex: 1,
+                    expectedConfigs: 2,
+                });
             });
 
             it('should fail if expectedConfigLength dont match with config.length', () => {
-                multiConfigTest({ multi: true, configIndex: 1, expectedConfigs: 3 });
+                multiConfigTest({
+                    multi: true,
+                    configIndex: 1,
+                    expectedConfigs: 3,
+                });
             });
-        })
+        });
     });
 
     describe('module functions', () => {
@@ -185,13 +206,19 @@ describe('webpackWorker', () => {
             const getAppNameTest = (options, appName) => {
                 const doneCallback = jest.fn();
                 jest.spyOn(console, 'log');
-                webpackWorker('testConfig', { json: false }, 0, 1, doneCallback);
+                webpackWorker(
+                    'testConfig',
+                    { json: false },
+                    0,
+                    1,
+                    doneCallback,
+                );
 
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb(Object.assign({ webpack: 'config' }, options));
 
-                let finishedCallback = run.mock.calls[0][0];
-                finishedCallback(null, { compilation: {}});
+                const finishedCallback = run.mock.calls[0][0];
+                finishedCallback(null, { compilation: {} });
 
                 expect(console.log.mock.calls[1][2]).toBe(appName);
             };
@@ -204,10 +231,10 @@ describe('webpackWorker', () => {
                 getAppNameTest(
                     {
                         output: {
-                            filename: 'test.app.js'
-                        }
+                            filename: 'test.app.js',
+                        },
                     },
-                    'test.app.js'
+                    'test.app.js',
                 );
             });
 
@@ -219,9 +246,9 @@ describe('webpackWorker', () => {
                         },
                         entry: {
                             testApp: 'filepath',
-                        }
+                        },
                     },
-                    'bundle.testApp.js'
+                    'bundle.testApp.js',
                 );
             });
 
@@ -233,9 +260,9 @@ describe('webpackWorker', () => {
                         },
                         entry: {
                             testApp: 'filepath',
-                        }
+                        },
                     },
-                    'bundle/testApp/testApp.js'
+                    'bundle/testApp/testApp.js',
                 );
             });
         });
@@ -243,28 +270,34 @@ describe('webpackWorker', () => {
         describe('getOutputOptions', () => {
             it('should get stats options if they set', () => {
                 const statsObj = {
-                    compilation: {
-                    },
+                    compilation: {},
                     toString: jest.fn().mockReturnValue('size: 321.kb'),
-                    toJson: jest.fn().mockReturnValue('size: 321.kb')
+                    toJson: jest.fn().mockReturnValue('size: 321.kb'),
                 };
                 jest.spyOn(console, 'log');
                 const doneCallback = jest.fn();
-                webpackWorker('testConfig', {
-                    stats: true,
-                    modulesSort: 'name',
-                    chunksSort: 'size',
-                    assetsSort: 'name',
-                    exclude: ['file'],
-                    colors: true
-                }, 0, 1, doneCallback);
+                webpackWorker(
+                    'testConfig',
+                    {
+                        stats: true,
+                        modulesSort: 'name',
+                        chunksSort: 'size',
+                        assetsSort: 'name',
+                        exclude: ['file'],
+                        colors: true,
+                    },
+                    0,
+                    1,
+                    doneCallback,
+                );
 
-                expect(promiseMock.resolve.mock.calls[0][0]).toEqual({ webpack: 'config' });
+                expect(promiseMock.resolve.mock.calls[0][0]).toEqual({
+                    webpack: 'config',
+                });
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
 
-
-                let finishedCallback = run.mock.calls[0][0];
+                const finishedCallback = run.mock.calls[0][0];
                 finishedCallback(null, statsObj);
                 expect(statsObj.toString.mock.calls).toMatchSnapshot();
             });
@@ -273,13 +306,12 @@ describe('webpackWorker', () => {
 
     describe('creator function', () => {
         describe('shutdownCallback', () => {
-
             let _exit;
             beforeEach(() => {
                 _exit = process.exit;
             });
             afterEach(() => {
-                process.exit  = _exit;
+                process.exit = _exit;
                 process.removeAllListeners('SIGINT');
             });
 
@@ -290,18 +322,17 @@ describe('webpackWorker', () => {
                         errors: [
                             { message: 'module not found' },
                             { message: 'module not found 2' },
-                        ]
+                        ],
                     },
-                    toJson: jest.fn().mockReturnThis()
+                    toJson: jest.fn().mockReturnThis(),
                 };
                 process.exit = jest.fn();
 
-                webpackWorker('testConfig', options , 0, 1, doneCallback);
+                webpackWorker('testConfig', options, 0, 1, doneCallback);
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
                 const shutdownCallback = process.listeners('SIGINT')[0];
                 shutdownCallback();
-
 
                 if (options.watch) {
                     expect(close.mock.calls[0][0]).toBe(doneCallback);
@@ -324,45 +355,50 @@ describe('webpackWorker', () => {
         describe('finishedCallback', () => {
             const finishCbTest = options => {
                 const statsObj = {
-                    compilation: {
-                    },
+                    compilation: {},
                     toString: jest.fn().mockReturnValue('size: 321.kb'),
-                    toJson: jest.fn().mockReturnValue('size: 321.kb')
+                    toJson: jest.fn().mockReturnValue('size: 321.kb'),
                 };
                 const doneCallback = jest.fn();
                 jest.spyOn(console, 'log');
                 jest.spyOn(console, 'error');
 
                 webpackWorker('testConfig', options.worker, 0, 1, doneCallback);
-                expect(promiseMock.resolve.mock.calls[0][0]).toEqual({ webpack: 'config' });
+                expect(promiseMock.resolve.mock.calls[0][0]).toEqual({
+                    webpack: 'config',
+                });
 
                 const thenCb = promiseMock.then.mock.calls[0][0];
                 thenCb({ webpack: 'config', name: 'testApp' });
                 expect(process.listenerCount('SIGINT')).toBe(1);
 
-                let finishedCallback = run.mock.calls[0][0];
-
+                const finishedCallback = run.mock.calls[0][0];
 
                 if (options.isError) {
-                    finishedCallback({ error: 'Exception' }, { compilation: {}});
+                    finishedCallback(
+                        { error: 'Exception' },
+                        { compilation: {} },
+                    );
                     expect(console.error).toHaveBeenCalledTimes(2);
-                    expect(doneCallback.mock.calls[0]).toEqual([{error: 'Exception'}]);
+                    expect(doneCallback.mock.calls[0]).toEqual([
+                        { error: 'Exception' },
+                    ]);
                 } else if (options.isStats) {
                     finishedCallback(null, statsObj);
                     expect(doneCallback.mock.calls[0]).toMatchSnapshot();
                     expect(console.log.mock.calls[1]).toEqual(['size: 321.kb']);
-                } else { // success
+                } else {
+                    // success
                     finishedCallback(null, statsObj);
                     expect(doneCallback.mock.calls[0]).toEqual([null, '']);
                 }
                 expect(process.listenerCount('SIGINT')).toBe(0);
-
             };
 
             it('should spit out error, remove SIGINT and close when an exception happen', () => {
                 finishCbTest({
                     worker: { json: true },
-                    isError: true
+                    isError: true,
                 });
             });
 
@@ -370,7 +406,7 @@ describe('webpackWorker', () => {
                 finishCbTest({
                     worker: { stats: true },
                     isError: false,
-                    isStats: true
+                    isStats: true,
                 });
             });
 
@@ -378,7 +414,7 @@ describe('webpackWorker', () => {
                 finishCbTest({
                     worker: { json: true },
                     isError: false,
-                    isStats: false
+                    isStats: false,
                 });
             });
         });

@@ -1,79 +1,89 @@
-var jsVars = require('interpret').jsVariants,
-    endsWith = require('lodash').endsWith,
-    availableExts = Object.keys(jsVars),
-    chalk = require('chalk');
+const jsVars = require('interpret').jsVariants;
+const endsWith = require('lodash').endsWith;
+const chalk = require('chalk');
+
+const availableExts = Object.keys(jsVars);
 
 // sort extensions to ensure that .babel.js and
 // similar ones are always matched before .js
-availableExts.sort(function(a, b) {
-    var res = -(a.split(/\./).length - b.split(/\./).length);
+const compareExtensions = (a, b) => {
+    const res = -(a.split(/\./).length - b.split(/\./).length);
     // all things being equal, we need to
     // prioritize .js as it is most likely
-    if(res === 0) {
-        if(a === '.js') {
+    if (res === 0) {
+        if (a === '.js') {
             return -1;
         }
-        if(b === '.js') {
+        if (b === '.js') {
             return 1;
         }
         return 0;
     }
     return res;
-});
+};
+availableExts.sort(compareExtensions);
 
-function getMatchingLoaderFn(configPath, extensions, variants) {
-    let availableExtensions =  extensions || availableExts;
+const getMatchingLoaderFn = (configPath, extensions, variants) => {
+    let availableExtensions = extensions || availableExts;
     let jsVariants = variants || jsVars;
-    for(var i = 0, len = availableExtensions.length; i < len; i++) {
-        var ext = availableExtensions[i];
-        if(endsWith(configPath, ext)) {
-            return jsVariants[ext];
+    let retVal = null;
+
+    availableExtensions.some(ext => {
+        if (endsWith(configPath, ext)) {
+            retVal = jsVariants[ext];
+            return true;
         }
-    }
-    return null;
-}
+    });
+    return retVal;
+};
 
-function callConfigFunction(fn) {
-    return fn(require('minimist')(process.argv, { '--': true }).env || {});
-}
+const callConfigFunction = fn =>
+    fn(require('minimist')(process.argv, { '--': true }).env || {});
 
-function getConfig(configPath) {
-    var configModule = require(configPath);
-    var configDefault = configModule && configModule.__esModule ? configModule.default : configModule;
-    return typeof configDefault === 'function' ? callConfigFunction(configDefault) : configDefault;
-}
+const getConfig = configPath => {
+    const configModule = require(configPath);
+    const configDefault =
+        configModule && configModule.__esModule
+            ? configModule.default
+            : configModule;
+    return typeof configDefault === 'function'
+        ? callConfigFunction(configDefault)
+        : configDefault;
+};
 
 module.exports = {
-    default: function(configPath, matchingLoader) {
-        let getMatchingLoader = matchingLoader || getMatchingLoaderFn;
+    default: (configPath, matchingLoader) => {
+        const getMatchingLoader = matchingLoader || getMatchingLoaderFn;
 
-        var mod = getMatchingLoader(configPath);
-        if(mod) {
-            var mods = Array.isArray(mod) ? mod : [mod],
-                installed = false;
+        let mod = getMatchingLoader(configPath);
+        if (mod) {
+            let mods = Array.isArray(mod) ? mod : [mod];
+            let installed = false;
 
-            for(var i = 0, len = mods.length; i < len; i++) {
-                mod = mods[i];
-                if(typeof mod === 'string') {
+            for (let mod of mods) {
+                if (typeof mod === 'string') {
                     try {
                         require(mod);
                         installed = true;
-                    } catch(ignored) {}
-                } else if(typeof mod === 'object') {
+                    } catch (ignored) {}
+                } else if (typeof mod === 'object') {
                     try {
                         var s = require(mod.module);
                         mod.register(s);
                         installed = true;
-                    } catch(ignored) {}
+                    } catch (ignored) {}
                 }
 
-                if(installed) {
+                if (installed) {
                     break;
                 }
             }
 
-            if(!installed) {
-                throw new Error('Could not load required module loading for ' + chalk.underline(configPath));
+            if (!installed) {
+                throw new Error(
+                    'Could not load required module loading for ' +
+                        chalk.underline(configPath),
+                );
             }
         }
         return getConfig(configPath);
