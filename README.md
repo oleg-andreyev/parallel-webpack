@@ -1,3 +1,4 @@
+[![npm version](https://badge.fury.io/js/parallel-webpack.svg)](https://badge.fury.io/js/parallel-webpack)
 [![Build Status](https://travis-ci.org/trivago/parallel-webpack.svg?branch=master)](https://travis-ci.org/trivago/parallel-webpack) [![CircleCI](https://circleci.com/gh/trivago/parallel-webpack.svg?style=svg)](https://circleci.com/gh/trivago/parallel-webpack) [![Coverage Status](https://coveralls.io/repos/github/trivago/parallel-webpack/badge.svg?branch=coverage)](https://coveralls.io/github/trivago/parallel-webpack?branch=coverage)
 # parallel-webpack - Building multi-configs in parallel
 
@@ -216,6 +217,7 @@ Just like webpack, you can also use `parallel-webpack` as an API from node.js
 ```javascript
 var run = require('parallel-webpack').run,
     configPath = require.resolve('./webpack.config.js');
+
 run(configPath, {
     watch: false,
     maxRetries: 1,
@@ -224,7 +226,24 @@ run(configPath, {
 });
 ```
 
+You can pass a notify callback as well.
+```javascript
+var run = require('parallel-webpack').run,
+    configPath = require.resolve('./webpack.config.js'),
+    options = {/*...*/};
+
+function notify() {
+// do things
+}
+
+run(configPath, options, notify);
+```
+**NOTE:** In watch mode notify callback provided with Node.js API will run **only once**
+when all of the builds are finished.
+
 ### createVariants
+
+---
 
 #### createVariants(baseConfig: Object, variants: Object, configCallback: Function): Object[]
 
