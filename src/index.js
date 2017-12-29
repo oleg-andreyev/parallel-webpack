@@ -1,24 +1,21 @@
-var workerFarm = require('worker-farm'),
-    Ajv = require('ajv'),
-    Promise = require('bluebird'),
-    chalk = require('chalk'),
-    assign = require('lodash.assign'),
-    pluralize = require('pluralize'),
-    schema = require('./schema.json'),
-    loadConfigurationFile = require('./src/loadConfigurationFile').default,
-    startWatchIPCServer = require('./src/watchModeIPC').startWatchIPCServer;
+import workerFarm from 'worker-farm';
+import Ajv from 'ajv';
+import Promise from 'bluebird';
+import chalk from 'chalk';
+import { assign } from 'lodash';
+import pluralize from 'pluralize';
+import schema from '../schema.json';
+import loadConfigurationFile from './loadConfigurationFile';
+import { startWatchIPCServer } from './watchModeIPC';
 
-var ajv = new Ajv({
+const ajv = new Ajv({
     allErrors: true,
     coerceTypes: true,
     removeAdditional: 'all',
     useDefaults: true,
 });
-var validate = ajv.compile(schema);
-
-function notSilent(options) {
-    return !options.json;
-}
+const validate = ajv.compile(schema);
+const notSilent = options => !options.json;
 
 function startFarm(config, configPath, options, runWorker, callback) {
     config = Array.isArray(config) ? config : [config];
@@ -40,22 +37,23 @@ function startFarm(config, configPath, options, runWorker, callback) {
         );
     }
 
-    var builds = config.map(function(c, i) {
-        return runWorker(configPath, options, i, config.length);
-    });
+    const builds = config.map((c, i) =>
+        runWorker(configPath, options, i, config.length),
+    );
+
     if (options.bail) {
         return Promise.all(builds);
     } else {
-        return Promise.settle(builds).then(function(results) {
-            return Promise.all(
-                results.map(function(result) {
+        return Promise.settle(builds).then(results =>
+            Promise.all(
+                results.map(result => {
                     if (result.isFulfilled()) {
                         return result.value();
                     }
                     return Promise.reject(result.reason());
                 }),
-            );
-        });
+            ),
+        );
     }
 }
 
@@ -80,12 +78,11 @@ function startFarm(config, configPath, options, runWorker, callback) {
  * @return {Promise} A Promise that is resolved once all builds have been
  *   created
  */
-function run(configPath, options, callback) {
-    var config,
-        argvBackup = process.argv,
-        farmOptions = assign({}, options);
-    options = options || {};
-    if (options.colors === undefined) {
+export function run(configPath, options = {}, callback) {
+    const argvBackup = process.argv;
+    const farmOptions = assign({}, options);
+    let config;
+    if (!options.colors) {
         options.colors = chalk.supportsColor;
     }
     if (!options.argv) {
@@ -127,12 +124,9 @@ function run(configPath, options, callback) {
         );
     }
 
-    var workers = workerFarm(
-        farmOptions,
-        require.resolve('./src/webpackWorker'),
-    );
+    const workers = workerFarm(farmOptions, require.resolve('./webpackWorker'));
 
-    var shutdownCallback = function() {
+    const shutdownCallback = function() {
         if (notSilent(options)) {
             console.log(chalk.red('[WEBPACK]') + ' Forcefully shutting down');
         }
@@ -141,15 +135,15 @@ function run(configPath, options, callback) {
 
     process.on('SIGINT', shutdownCallback);
 
-    var startTime = Date.now();
-    var farmPromise = startFarm(
+    const startTime = Date.now();
+    const farmPromise = startFarm(
         config,
         configPath,
         options,
         Promise.promisify(workers),
         callback,
     )
-        .error(function(err) {
+        .error(err => {
             if (notSilent(options)) {
                 console.log(
                     '%s Build failed after %s seconds',
@@ -159,7 +153,7 @@ function run(configPath, options, callback) {
             }
             return Promise.reject(err);
         })
-        .then(function(results) {
+        .then(results => {
             if (notSilent(options)) {
                 console.log(
                     '%s Finished build after %s seconds',
@@ -185,7 +179,4 @@ function run(configPath, options, callback) {
     return farmPromise;
 }
 
-module.exports = {
-    createVariants: require('./src/createVariants'),
-    run: run,
-};
+export { createVariants } from './createVariants';

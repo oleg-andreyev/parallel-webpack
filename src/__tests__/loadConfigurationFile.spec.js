@@ -1,9 +1,9 @@
 jest.mock('configPath', () => ({ test: 'config' }), { virtual: true });
 
-const module = require('../loadConfigurationFile');
-const loadConfigurationFile = module.default;
-const getMatchingLoader = module.getMatchingLoader;
-const availableExtensions = module.availableExtensions;
+import loadConfigurationFile, {
+    getMatchingLoader,
+    availableExtensions,
+} from '../loadConfigurationFile';
 
 import { underline } from 'chalk';
 import { jsVariants } from 'interpret';
@@ -96,7 +96,7 @@ describe('loadConfigurationFile module', () => {
 
             const result = loadConfigurationFile('test.test', mockGetLoader);
             expect(result).toBe(`testModuleFrom${loaderType}`);
-        }
+        };
 
         it('should require loaders as string', () => {
             loadertest('String');

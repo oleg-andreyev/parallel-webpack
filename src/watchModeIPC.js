@@ -1,6 +1,6 @@
-const ipc = require('node-ipc');
+import ipc from 'node-ipc';
+import watchDoneHandler from './watchDoneHandler';
 const serverName = 'webpack';
-const watchDoneHandler = require('./watchDoneHandler');
 
 module.exports = {
     /**

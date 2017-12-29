@@ -3,10 +3,10 @@
 /**
  * Created by pgotthardt on 07/12/15.
  */
-var run = require('../index').run,
+var run = require('../dist/index').run,
     path = require('path'),
     chalk = require('chalk'),
-    findConfigFile = require('../src/findConfigFile'),
+    findConfigFile = require('../dist/findConfigFile'),
     argv = require('minimist')(process.argv.slice(2), {
         '--': true,
         default: {

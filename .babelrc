@@ -1,7 +1,12 @@
 {
-  "presets": [
-    ["env", {
-      "targets": {"node": 4}
-    }
-  ]]
+    "plugins": [
+        "syntax-trailing-function-commas",
+        "transform-es2015-destructuring",
+        "transform-es2015-parameters",
+        "transform-async-to-generator",
+        "transform-strict-mode",
+        "transform-object-rest-spread",
+        "transform-es2015-modules-commonjs"
+    ],
+    "retainLines": true
 }

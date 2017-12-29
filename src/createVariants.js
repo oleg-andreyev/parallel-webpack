@@ -1,5 +1,4 @@
-const assign = require('lodash.assign');
-const flatten = require('lodash.flatten');
+import { assign, flatten } from 'lodash';
 
 /**
  * Creates configuration variants.

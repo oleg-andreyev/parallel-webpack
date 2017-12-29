@@ -1,6 +1,6 @@
-const jsVars = require('interpret').jsVariants;
-const endsWith = require('lodash').endsWith;
-const chalk = require('chalk');
+import { jsVariants as jsVars } from 'interpret';
+import { endsWith } from 'lodash';
+import chalk from 'chalk';
 
 const availableExts = Object.keys(jsVars);
 
@@ -21,6 +21,7 @@ const compareExtensions = (a, b) => {
     }
     return res;
 };
+
 availableExts.sort(compareExtensions);
 
 const getMatchingLoaderFn = (configPath, extensions, variants) => {
@@ -51,43 +52,42 @@ const getConfig = configPath => {
         : configDefault;
 };
 
-module.exports = {
-    default: (configPath, matchingLoader) => {
-        const getMatchingLoader = matchingLoader || getMatchingLoaderFn;
+export default (configPath, matchingLoader) => {
+    const getMatchingLoader = matchingLoader || getMatchingLoaderFn;
 
-        let mod = getMatchingLoader(configPath);
-        if (mod) {
-            let mods = Array.isArray(mod) ? mod : [mod];
-            let installed = false;
+    let mod = getMatchingLoader(configPath);
+    if (mod) {
+        let mods = Array.isArray(mod) ? mod : [mod];
+        let installed = false;
 
-            for (let mod of mods) {
-                if (typeof mod === 'string') {
-                    try {
-                        require(mod);
-                        installed = true;
-                    } catch (ignored) {}
-                } else if (typeof mod === 'object') {
-                    try {
-                        var s = require(mod.module);
-                        mod.register(s);
-                        installed = true;
-                    } catch (ignored) {}
-                }
-
-                if (installed) {
-                    break;
-                }
+        for (let mod of mods) {
+            if (typeof mod === 'string') {
+                try {
+                    require(mod);
+                    installed = true;
+                } catch (ignored) {}
+            } else if (typeof mod === 'object') {
+                try {
+                    var s = require(mod.module);
+                    mod.register(s);
+                    installed = true;
+                } catch (ignored) {}
             }
 
-            if (!installed) {
-                throw new Error(
-                    'Could not load required module loading for ' +
-                        chalk.underline(configPath),
-                );
+            if (installed) {
+                break;
             }
         }
-        return getConfig(configPath);
-    },
-    getMatchingLoader: getMatchingLoaderFn,
-    availableExtensions: availableExts,
+
+        if (!installed) {
+            throw new Error(
+                'Could not load required module loading for ' +
+                    chalk.underline(configPath),
+            );
+        }
+    }
+    return getConfig(configPath);
 };
+
+export const getMatchingLoader = getMatchingLoaderFn;
+export const availableExtensions = availableExts;

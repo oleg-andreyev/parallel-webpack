@@ -1,8 +1,7 @@
-const Promise = require('bluebird');
-const chalk = require('chalk');
-const loadConfigurationFile = require('./loadConfigurationFile').default;
-const notifyIPCWatchCompileDone = require('./watchModeIPC')
-    .notifyIPCWatchCompileDone;
+import Promise from 'bluebird';
+import chalk from 'chalk';
+import loadConfigurationFile from './loadConfigurationFile';
+import { notifyIPCWatchCompileDone } from './watchModeIPC';
 
 /**
  * Choose the most correct version of webpack, prefer locally installed version,
@@ -30,7 +29,7 @@ const getAppName = webpackConfig => {
 };
 
 const getOutputOptions = (webpackConfig, options) => {
-    const outputOptions = Object.create(webpackConfig.stats || {});
+    const outputOptions = { ...webpackConfig.stats };
     if (typeof options.modulesSort !== 'undefined') {
         outputOptions.modulesSort = options.modulesSort;
     }

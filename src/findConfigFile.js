@@ -1,7 +1,7 @@
-const fs = require('fs');
-const jsVariants = require('interpret').jsVariants;
+import fs from 'fs';
+import { jsVariants } from 'interpret';
 
-const potentialExtensions = [''].concat(Object.keys(jsVariants));
+const potentialExtensions = ['', ...Object.keys(jsVariants)];
 
 const checkWithAccess = path => {
     try {
