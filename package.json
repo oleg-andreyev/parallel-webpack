@@ -1,8 +1,7 @@
 {
     "name": "parallel-webpack",
     "version": "2.2.0",
-    "description":
-        "Builds multiple webpack configurations in parallel and allows you to easily create variants to those configurations.",
+    "description": "Builds multiple webpack configurations in parallel and allows you to easily create variants to those configurations.",
     "main": "./dist/index.js",
     "bin": {
         "parallel-webpack": "bin/run.js"
@@ -10,15 +9,16 @@
     "scripts": {
         "build": "node ./build/build.js",
         "clean": "rm -rf ./dist",
-        "prepublish":
-            "npm run clean && npm run prettier && npm run build && npm run test-only",
+        "prepublish": "npm run clean && npm run prettier && npm run build && npm run test-only",
         "prettier": "prettier --write '**!(coverage)/*!(.config).js'",
-        "test":
-            "jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+        "test": "jest --coverage && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
         "test-only": "jest",
         "watch": "node ./build/watch.js"
     },
-    "keywords": ["webpack", "parallel"],
+    "keywords": [
+        "webpack",
+        "parallel"
+    ],
     "author": "Patrick Gotthardt <patrick.gotthardt@trivago.com>",
     "license": "BSD-3-Clause",
     "repository": {
@@ -36,9 +36,9 @@
         "bluebird": "^3.0.6",
         "chalk": "^2.3.0",
         "interpret": "^1.0.1",
-        "lodash.assign": "^4.0.8",
         "lodash.endswith": "^4.0.1",
         "lodash.flatten": "^4.2.0",
+        "lodash.rearg": "^4.4.0",
         "minimist": "^1.2.0",
         "node-ipc": "^9.1.0",
         "pluralize": "^1.2.1",
@@ -56,6 +56,7 @@
         "babel-plugin-transform-es2015-parameters": "^6.24.1",
         "babel-plugin-transform-object-rest-spread": "^6.26.0",
         "babel-plugin-transform-strict-mode": "^6.24.1",
+        "babel-preset-env": "^1.6.1",
         "chokidar": "^1.7.0",
         "coveralls": "^2.13.1",
         "jest": "^20.0.4",

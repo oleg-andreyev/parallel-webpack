@@ -13,9 +13,9 @@ describe('createVariants', () => {
         };
         const callback = x => {
             const ret = Object.assign({}, x);
-            ret.name = `bundle.${x.rtl ? 'rtl' : 'no-rtl'}.${x.debug
-                ? 'dbg'
-                : 'no-debug'}.${x.features}.js`;
+            ret.name = `bundle.${x.rtl ? 'rtl' : 'no-rtl'}.${
+                x.debug ? 'dbg' : 'no-debug'
+            }.${x.features}.js`;
             return ret;
         };
 
@@ -32,7 +32,7 @@ describe('createVariants', () => {
             result = createVariants(variants);
         }
         expect(result).toMatchSnapshot();
-    }
+    };
 
     it('should generate configs with "baseConfig, variants, configCallback" as params', () => {
         test(true, true);
@@ -42,7 +42,7 @@ describe('createVariants', () => {
         test(false, true);
     });
 
-    it('should generate configs with "variants" as params', () => {
+    it.only('should generate configs with "variants" as params', () => {
         test(false, false);
     });
 

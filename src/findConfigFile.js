@@ -25,13 +25,10 @@ const exists = path =>
     fs.accessSync ? checkWithAccess(path) : checkWithStatSync(path);
 
 module.exports = configPath => {
-    for (let i = 0, len = potentialExtensions.length; i < len; i++) {
-        const ext = potentialExtensions[i];
-        if (exists(configPath + ext)) {
-            // file exists, use that extension
-            return configPath + ext;
-        }
+    const ext = potentialExtensions.find(ext => exists(configPath + ext));
+    // can be extensionless
+    if (ext !== undefined) {
+        return configPath + ext;
     }
-
     throw new Error('File does not exist');
 };

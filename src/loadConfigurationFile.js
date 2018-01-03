@@ -1,12 +1,10 @@
-import { jsVariants as jsVars } from 'interpret';
+import { jsVariants } from 'interpret';
 import { endsWith } from 'lodash';
 import chalk from 'chalk';
 
-const availableExts = Object.keys(jsVars);
-
-// sort extensions to ensure that .babel.js and
-// similar ones are always matched before .js
-const compareExtensions = (a, b) => {
+export const availableExtensions = Object.keys(jsVariants).sort((a, b) => {
+    // sort extensions to ensure that .babel.js and
+    // similar ones are always matched before .js
     const res = -(a.split(/\./).length - b.split(/\./).length);
     // all things being equal, we need to
     // prioritize .js as it is most likely
@@ -20,22 +18,15 @@ const compareExtensions = (a, b) => {
         return 0;
     }
     return res;
-};
+});
 
-availableExts.sort(compareExtensions);
-
-const getMatchingLoaderFn = (configPath, extensions, variants) => {
-    let availableExtensions = extensions || availableExts;
-    let jsVariants = variants || jsVars;
-    let retVal = null;
-
-    availableExtensions.some(ext => {
-        if (endsWith(configPath, ext)) {
-            retVal = jsVariants[ext];
-            return true;
-        }
-    });
-    return retVal;
+export const getMatchingLoader = (
+    configPath,
+    extensions = availableExtensions,
+    variants = jsVariants,
+) => {
+    const ext = extensions.find(ext => endsWith(configPath, ext));
+    return ext ? variants[ext] : null;
 };
 
 const callConfigFunction = fn =>
@@ -52,32 +43,25 @@ const getConfig = configPath => {
         : configDefault;
 };
 
-export default (configPath, matchingLoader) => {
-    const getMatchingLoader = matchingLoader || getMatchingLoaderFn;
+export default (configPath, getMatchingLoaderFn = getMatchingLoader) => {
+    const mod = getMatchingLoaderFn(configPath);
 
-    let mod = getMatchingLoader(configPath);
     if (mod) {
-        let mods = Array.isArray(mod) ? mod : [mod];
-        let installed = false;
-
-        for (let mod of mods) {
+        const mods = Array.isArray(mod) ? mod : [mod];
+        const installed = mods.some(mod => {
             if (typeof mod === 'string') {
                 try {
                     require(mod);
-                    installed = true;
+                    return true;
                 } catch (ignored) {}
             } else if (typeof mod === 'object') {
                 try {
                     var s = require(mod.module);
                     mod.register(s);
-                    installed = true;
+                    return true;
                 } catch (ignored) {}
             }
-
-            if (installed) {
-                break;
-            }
-        }
+        });
 
         if (!installed) {
             throw new Error(
@@ -88,6 +72,3 @@ export default (configPath, matchingLoader) => {
     }
     return getConfig(configPath);
 };
-
-export const getMatchingLoader = getMatchingLoaderFn;
-export const availableExtensions = availableExts;

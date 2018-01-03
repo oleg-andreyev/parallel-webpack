@@ -2,24 +2,21 @@ import workerFarm from 'worker-farm';
 import Ajv from 'ajv';
 import Promise from 'bluebird';
 import chalk from 'chalk';
-import { assign } from 'lodash';
 import pluralize from 'pluralize';
 import schema from '../schema.json';
 import loadConfigurationFile from './loadConfigurationFile';
 import { startWatchIPCServer } from './watchModeIPC';
 
-const ajv = new Ajv({
+const validate = new Ajv({
     allErrors: true,
     coerceTypes: true,
     removeAdditional: 'all',
     useDefaults: true,
-});
-const validate = ajv.compile(schema);
-const notSilent = options => !options.json;
+}).compile(schema);
 
-function startFarm(config, configPath, options, runWorker, callback) {
+const startFarm = (config, configPath, options = {}, runWorker, callback) => {
     config = Array.isArray(config) ? config : [config];
-    options = options || {};
+    const silent = !!options.json;
 
     // When in watch mode and a callback is provided start IPC server to invoke callback
     // once all webpack configurations have been compiled
@@ -27,13 +24,11 @@ function startFarm(config, configPath, options, runWorker, callback) {
         startWatchIPCServer(callback, Object.keys(config));
     }
 
-    if (notSilent(options)) {
+    if (!silent) {
         console.log(
-            chalk.blue('[WEBPACK]') +
-                ' Building ' +
-                chalk.yellow(config.length) +
-                ' ' +
-                pluralize('target', config.length),
+            `${chalk.blue('[WEBPACK]')} Building ${chalk.yellow(
+                config.length,
+            )} ${pluralize('target', config.length)}`,
         );
     }
 
@@ -46,16 +41,16 @@ function startFarm(config, configPath, options, runWorker, callback) {
     } else {
         return Promise.settle(builds).then(results =>
             Promise.all(
-                results.map(result => {
-                    if (result.isFulfilled()) {
-                        return result.value();
-                    }
-                    return Promise.reject(result.reason());
-                }),
+                results.map(
+                    result =>
+                        result.isFulfilled()
+                            ? result.value()
+                            : Promise.reject(result.reason()),
+                ),
             ),
         );
     }
-}
+};
 
 /**
  * Runs the specified webpack configuration in parallel.
@@ -78,10 +73,12 @@ function startFarm(config, configPath, options, runWorker, callback) {
  * @return {Promise} A Promise that is resolved once all builds have been
  *   created
  */
-export function run(configPath, options = {}, callback) {
+export const run = (configPath, options = {}, callback) => {
     const argvBackup = process.argv;
-    const farmOptions = assign({}, options);
+    const farmOptions = { ...options };
+    const silent = !!options.json;
     let config;
+
     if (!options.colors) {
         options.colors = chalk.supportsColor;
     }
@@ -89,6 +86,7 @@ export function run(configPath, options = {}, callback) {
         options.argv = [];
     }
     options.argv.unshift(process.execPath, 'parallel-webpack');
+
     try {
         process.argv = options.argv;
         config = loadConfigurationFile(configPath);
@@ -111,7 +109,7 @@ export function run(configPath, options = {}, callback) {
             new Error(
                 'Options validation failed:\n' +
                     validate.errors
-                        .map(function(error) {
+                        .map(error => {
                             return (
                                 'Property: "options' +
                                 error.dataPath +
@@ -126,8 +124,8 @@ export function run(configPath, options = {}, callback) {
 
     const workers = workerFarm(farmOptions, require.resolve('./webpackWorker'));
 
-    const shutdownCallback = function() {
-        if (notSilent(options)) {
+    const shutdownCallback = () => {
+        if (!silent) {
             console.log(chalk.red('[WEBPACK]') + ' Forcefully shutting down');
         }
         workerFarm.end(workers);
@@ -144,7 +142,7 @@ export function run(configPath, options = {}, callback) {
         callback,
     )
         .error(err => {
-            if (notSilent(options)) {
+            if (!silent) {
                 console.log(
                     '%s Build failed after %s seconds',
                     chalk.red('[WEBPACK]'),
@@ -154,16 +152,14 @@ export function run(configPath, options = {}, callback) {
             return Promise.reject(err);
         })
         .then(results => {
-            if (notSilent(options)) {
+            if (!silent) {
                 console.log(
                     '%s Finished build after %s seconds',
                     chalk.blue('[WEBPACK]'),
                     chalk.blue((Date.now() - startTime) / 1000),
                 );
             }
-            results = results.filter(function(result) {
-                return result;
-            });
+            results = results.filter(result => result);
             if (results.length) {
                 return results;
             }
@@ -177,6 +173,6 @@ export function run(configPath, options = {}, callback) {
         farmPromise.asCallback(callback);
     }
     return farmPromise;
-}
+};
 
 export { createVariants } from './createVariants';

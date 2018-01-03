@@ -1,4 +1,12 @@
 {
+    "presets": [
+        [
+            "env",
+            {
+                "targets": { "node": 4 }
+            }
+        ]
+    ],
     "plugins": [
         "syntax-trailing-function-commas",
         "transform-es2015-destructuring",
