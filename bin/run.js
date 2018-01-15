@@ -3,13 +3,15 @@
 /**
  * Created by pgotthardt on 07/12/15.
  */
-var run = require('../index').run,
+var commandLineUsage = require('command-line-usage'),
+    run = require('../index').run,
     path = require('path'),
     chalk = require('chalk'),
     findConfigFile = require('../src/findConfigFile'),
     argv = require('minimist')(process.argv.slice(2), {
         '--': true,
         default: {
+            help: false,
             watch: false,
             'max-retries': Infinity,
             // leave off file extension so that we can find the most appropriate one
@@ -30,6 +32,68 @@ var run = require('../index').run,
 
 if(argv.version) {
     process.stdout.write('parallel-webpack ' + chalk.blue(require('../package').version) + "\n");
+} else if (argv.help || process.argv.length === 2) {
+    const usage = commandLineUsage([
+        {
+            header: 'parallel-webpack',
+            content: 'Builds multi-config webpack projects in parallel'
+        },
+        {
+            header: 'Options',
+            optionList: [
+                {
+                    name: 'watch',
+                    description: 'Running the watcher'
+                },
+                {
+                    name: 'max-retries',
+                    type: Number,
+                    alias: 'm',
+                    description: 'Number of maximum retries'
+                },
+                {
+                    name: 'config',
+                    type: String,
+                    description: 'webpack configuration'
+                },
+                {
+                    name: 'parallel',
+                    type: Number,
+                    alias: 'p',
+                    description: 'Number of parallel threads'
+                },
+                {
+                    name: 'json',
+                    description: 'Output results as JSON'
+                },
+                {
+                    name: '[no-]colors',
+                    description: 'Output with colors'
+                },
+                {
+                    name: 'bail',
+                    description: 'bail'
+                },
+                {
+                    name: '[no-]stats',
+                    description: 'Output stats'
+                },
+                {
+                    name: 'version',
+                    alias: 'v'
+                },
+                {
+                    name: 'help',
+                    description: 'Print this usage guide.'
+                }
+            ]
+        },
+        {
+            content: 'Project home: [underline]{https://github.com/trivago/parallel-webpack}'
+        }
+    ]);
+    process.stdout.write(usage);
+    return;
 } else {
     try {
         chalk.enabled = argv.colors;
